@@ -1,6 +1,10 @@
 package Cache_Assignment;
 
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class LFUCache<K, V> implements Cache<K, V> {
     private final int capacity;
