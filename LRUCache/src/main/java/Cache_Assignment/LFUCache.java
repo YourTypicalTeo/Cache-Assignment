@@ -1,97 +1,97 @@
 package Cache_Assignment;
-/*
- *
- * @author ASSIGNMENT 2024-2025
-it2023101_it2023140_it2023024
- *
- */
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class LFUCache<K, V> implements Cache<K, V> {
     private final int capacity; // Το μέγεθος του cache
     private final CacheReplacementPolicy policy; // Πολιτική αντικατάστασης (LFU)
-    private final Map<K, Node> map; // Χάρτης για την αποθήκευση δεδομένων του cache
-    private final Map<Integer, HashSet<K>> frequencyMap; // Χάρτης για την παρακολούθηση της συχνότητας χρήσης
-    private int minFrequency; // Η ελάχιστη συχνότητα μέσα στο cache
+    private final Map<K, Node> map; // Χάρτης για δεδομένα του cache
+    private final TreeMap<Integer, HashSet<K>> frequencyMap; // Συχνότητα ταξινομημένη με TreeMap
+    private int minFrequency; // Ελάχιστη συχνότητα
 
+    // Constructor
     public LFUCache(int capacity, CacheReplacementPolicy policy) {
         if (capacity <= 0) {
-            throw new IllegalArgumentException("Το μέγεθος του cache πρέπει να είναι μεγαλύτερο από το μηδέν.");
+            throw new IllegalArgumentException("Cache capacity must be greater than zero.");
         }
-        this.capacity = capacity; // Ορίζουμε το μέγεθος του cache
-        this.policy = policy; // Ορίζουμε την πολιτική αντικατάστασης
-        this.map = new HashMap<>(); // Αρχικοποιούμε τον χάρτη για τα δεδομένα του cache
-        this.frequencyMap = new HashMap<>(); // Αρχικοποιούμε τον χάρτη συχνοτήτων
-        this.minFrequency = 0; // Ορίζουμε την αρχική ελάχιστη συχνότητα σε 0
+        this.capacity = capacity;
+        this.policy = policy;
+        this.map = new HashMap<>();
+        this.frequencyMap = new TreeMap<>();
+        this.minFrequency = 0;
     }
 
     @Override
     public V get(K key) {
         if (!map.containsKey(key)) {
-            return null; // Αν το κλειδί δεν υπάρχει, επιστρέφουμε null
+            return null; // Miss
         }
-        Node node = map.get(key); // Παίρνουμε τον κόμβο από τον χάρτη
-        increaseFrequency(node); // Αυξάνουμε τη συχνότητα χρήσης
-        return node.value; // Επιστρέφουμε την τιμή του κόμβου
+        Node node = map.get(key);
+        increaseFrequency(node);
+        return node.value; // Hit
     }
 
     @Override
     public void put(K key, V value) {
         if (capacity == 0) {
-            return; // Αν το μέγεθος του cache είναι 0, δεν κάνουμε τίποτα
+            return; // Αν το cache έχει μέγεθος 0, δεν αποθηκεύουμε τίποτα
         }
+
         if (map.containsKey(key)) {
-            Node node = map.get(key); // Παίρνουμε τον κόμβο από τον χάρτη
-            node.value = value; // Ενημερώνουμε την τιμή του κόμβου
-            increaseFrequency(node); // Αυξάνουμε τη συχνότητα χρήσης
+            Node node = map.get(key);
+            node.value = value; // Ενημέρωση τιμής
+            increaseFrequency(node);
         } else {
             if (map.size() == capacity) {
-                evictLFU(); // Αφαιρούμε το στοιχείο με τη χαμηλότερη συχνότητα
+                evictLFU(); // Διαγραφή του λιγότερο συχνού στοιχείου
             }
-            Node newNode = new Node(key, value); // Δημιουργούμε νέο κόμβο
-            map.put(key, newNode); // Προσθέτουμε το νέο κόμβο στον χάρτη
-            frequencyMap.computeIfAbsent(1, k -> new HashSet<>()).add(key); // Ενημερώνουμε τη συχνότητα χρήσης
-            minFrequency = 1; // Επαναφέρουμε την ελάχιστη συχνότητα στο 1
+            Node newNode = new Node(key, value);
+            map.put(key, newNode);
+            frequencyMap.computeIfAbsent(1, k -> new HashSet<>()).add(key);
+            minFrequency = 1; // Η νέα ελάχιστη συχνότητα είναι 1
         }
     }
 
     private void increaseFrequency(Node node) {
-        int freq = node.frequency; // Παίρνουμε τη συχνότητα του κόμβου
-        frequencyMap.get(freq).remove(node.key); // Αφαιρούμε το κλειδί από τη συχνότητα
+        int freq = node.frequency;
+        frequencyMap.get(freq).remove(node.key); // Αφαίρεση από την παλιά συχνότητα
         if (frequencyMap.get(freq).isEmpty()) {
-            frequencyMap.remove(freq); // Αν δεν υπάρχουν άλλα στοιχεία στη συχνότητα, την αφαιρούμε
+            frequencyMap.remove(freq); // Αν είναι κενή, αφαιρείται η καταχώρηση
             if (freq == minFrequency) {
-                minFrequency++; // Αυξάνουμε την ελάχιστη συχνότητα αν χρειάζεται
+                minFrequency++; // Ενημέρωση της ελάχιστης συχνότητας
             }
         }
-        node.frequency++; // Αυξάνουμε τη συχνότητα του κόμβου
-        frequencyMap.computeIfAbsent(node.frequency, k -> new HashSet<>()).add(node.key); // Ενημερώνουμε τον χάρτη συχνοτήτων
+
+        node.frequency++; // Αύξηση συχνότητας
+        frequencyMap.computeIfAbsent(node.frequency, k -> new HashSet<>()).add(node.key); // Προσθήκη στη νέα συχνότητα
     }
 
     private void evictLFU() {
         if (policy != CacheReplacementPolicy.LFU) {
-            throw new UnsupportedOperationException("Αυτό το cache υποστηρίζει μόνο πολιτική LFU.");
+            throw new UnsupportedOperationException("This cache only supports LFU policy.");
         }
-        // Παίρνουμε το πρώτο στοιχείο με τη μικρότερη συχνότητα
+
+        // Βρίσκουμε το στοιχείο με τη χαμηλότερη συχνότητα
         K keyToRemove = frequencyMap.get(minFrequency).iterator().next();
-        frequencyMap.get(minFrequency).remove(keyToRemove); // Αφαιρούμε το κλειδί από τον χάρτη συχνοτήτων
+        frequencyMap.get(minFrequency).remove(keyToRemove);
         if (frequencyMap.get(minFrequency).isEmpty()) {
-            frequencyMap.remove(minFrequency); // Αν η συχνότητα είναι κενή, την αφαιρούμε
+            frequencyMap.remove(minFrequency);
         }
-        map.remove(keyToRemove); // Αφαιρούμε το στοιχείο από τον χάρτη
+        map.remove(keyToRemove); // Αφαίρεση από τον κύριο χάρτη
     }
 
     private class Node {
-        K key; // Το κλειδί του κόμβου
-        V value; // Η τιμή του κόμβου
-        int frequency; // Η συχνότητα χρήσης του κόμβου
+        K key;
+        V value;
+        int frequency;
 
         Node(K key, V value) {
-            this.key = key; // Ορίζουμε το κλειδί
-            this.value = value; // Ορίζουμε την τιμή
-            this.frequency = 1; // Αρχική συχνότητα είναι 1
+            this.key = key;
+            this.value = value;
+            this.frequency = 1; // Ξεκινάμε με συχνότητα 1
         }
     }
 }
