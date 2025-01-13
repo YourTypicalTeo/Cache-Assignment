@@ -14,12 +14,12 @@ public class Simulation {
         int capacity = 25;  // Ορίζουμε το μέγεθος του cache
         int totalOperations = 100000;  // Ορίζουμε τον συνολικό αριθμό των λειτουργιών που θα εκτελέσουμε
 
-        // Επιλέγουμε την πολιτική αντικατάστασης (LRU, MRU, LFU)
-        CacheReplacementPolicy policy = CacheReplacementPolicy.LFU;
-
-        // Δημιουργούμε το cache ανάλογα με την επιλεγμένη πολιτική αντικατάστασης
-        LFUCache<Integer, String> cache = new LFUCache<>(capacity, policy);
-
+        // Επιλέγουμε την πολιτική αντικατάστασης
+        //CacheReplacementPolicy policy = CacheReplacementPolicy.LRU;
+        //CacheReplacementPolicy policy = CacheReplacementPolicy.LFU;
+        CacheReplacementPolicy policy = CacheReplacementPolicy.MRU;  // Μπορούμε να αλλάξουμε σε MRU αν θέλουμε
+        // Δημιουργούμε ένα νέο LRUCache με το επιλεγμένο μέγεθος και πολιτική αντικατάστασης
+        LRUCache<Integer, String> cache = new LRUCache<>(capacity, policy);
         Random random = new Random();  // Δημιουργούμε αντικείμενο Random για την παραγωγή τυχαίων αριθμών
 
         // Σενάριο 80/20: Το 80% των προσπελάσεων αφορά το 20% των κλειδιών
@@ -29,9 +29,7 @@ public class Simulation {
         }
 
         // Εκτελούμε τις λειτουργίες του cache (ανάκτηση και αποθήκευση στοιχείων)
-        int actualOperations = 0;
         for (int i = 0; i < totalOperations; i++) {
-            actualOperations++;
             int key;
             if (random.nextDouble() < 0.8) {
                 // Στο 80% των περιπτώσεων, χρησιμοποιούμε ένα από τα συχνά κλειδιά
@@ -49,11 +47,11 @@ public class Simulation {
         // Λαμβάνουμε τις μετρήσεις του cache (hits και misses)
         int hits = cache.getHitCount();  // Πόσες φορές βρήκαμε το στοιχείο στο cache
         int misses = cache.getMissCount();  // Πόσες φορές το στοιχείο δεν βρέθηκε και το προσθέσαμε
-        double hitRate = (hits * 100.0) / actualOperations;  // Υπολογίζουμε το ποσοστό των hits
-        double missRate = (misses * 100.0) / actualOperations;  // Υπολογίζουμε το ποσοστό των misses
+        double hitRate = (hits * 100.0) / totalOperations;  // Υπολογίζουμε το ποσοστό των hits
+        double missRate = (misses * 100.0) / totalOperations;  // Υπολογίζουμε το ποσοστό των misses
 
         // Εκτυπώνουμε τα αποτελέσματα
-        System.out.println("Total operations executed: " + actualOperations);
+        System.out.println("Total operations: " + totalOperations);
         System.out.println("Cache Hits: " + hits);
         System.out.println("Cache Misses: " + misses);
         System.out.printf("Hit Rate: %.2f%%\n", hitRate);
