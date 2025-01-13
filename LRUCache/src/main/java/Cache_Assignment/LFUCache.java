@@ -47,6 +47,7 @@ public class LFUCache<K, V> implements Cache<K, V> {
             return;
         }
 
+        // If key already exists, update the value and increase frequency
         if (cache.containsKey(key)) {
             Node node = cache.get(key);
             node.value = value;
@@ -54,10 +55,12 @@ public class LFUCache<K, V> implements Cache<K, V> {
             return;
         }
 
+        // If cache is full, evict the least frequently used item
         if (cache.size() == capacity) {
             evictLFU();
         }
 
+        // Insert the new key-value pair
         Node newNode = new Node(key, value);
         cache.put(key, newNode);
         frequencyMap.computeIfAbsent(1, k -> new LinkedList<>()).add(key);
@@ -66,26 +69,33 @@ public class LFUCache<K, V> implements Cache<K, V> {
     }
 
     private void increaseFrequency(Node node) {
-        int freq = node.frequency;
-        Queue<K> keys = frequencyMap.get(freq);
-        keys.remove(node.key);
-        if (keys.isEmpty()) {
-            frequencyMap.remove(freq);
-            if (freq == minFrequency) {
+        int currentFrequency = node.frequency; // Αποθηκεύουμε την τρέχουσα συχνότητα του κόμβου
+        Queue<K> currentQueue = frequencyMap.get(currentFrequency); // Παίρνουμε την ουρά για την τρέχουσα συχνότητα
+        // Αφαιρούμε το κλειδί από την τρέχουσα ουρά συχνότητας
+        currentQueue.remove(node.key);
+        // Αν η ουρά της τρέχουσας συχνότητας είναι άδεια, την αφαιρούμε από το χάρτη
+        if (currentQueue.isEmpty()) {
+            frequencyMap.remove(currentFrequency);
+            // Αν αφαιρέσαμε την τελευταία καταχώριση από τη συχνότητα, αυξάνουμε την ελάχιστη συχνότητα
+            if (currentFrequency == minFrequency) {
                 minFrequency++;
             }
         }
+        // Αυξάνουμε τη συχνότητα του κόμβου και τον προσθέτουμε στην ουρά της νέας συχνότητας
         node.frequency++;
         frequencyMap.computeIfAbsent(node.frequency, k -> new LinkedList<>()).add(node.key);
     }
-
     private void evictLFU() {
-        Queue<K> keys = frequencyMap.get(minFrequency);
-        K keyToRemove = keys.poll(); // Παίρνουμε το πρώτο στοιχείο στη συχνότητα
-        if (keys.isEmpty()) {
+        // Παίρνουμε την ουρά για την ελάχιστη συχνότητα
+        Queue<K> minFreqQueue = frequencyMap.get(minFrequency);
+        // Αποβάλλουμε το πρώτο στοιχείο από την ουρά (το στοιχείο με την ελάχιστη συχνότητα)
+        K keyToEvict = minFreqQueue.poll(); // Παίρνουμε το πρώτο στοιχείο στη συχνότητα
+        // Αν η ουρά της ελάχιστης συχνότητας είναι άδεια, την αφαιρούμε από το χάρτη
+        if (minFreqQueue.isEmpty()) {
             frequencyMap.remove(minFrequency);
         }
-        cache.remove(keyToRemove);
+        // Αφαιρούμε το κλειδί από το cache
+        cache.remove(keyToEvict);
     }
 
     public int getHitCount() {
@@ -104,7 +114,7 @@ public class LFUCache<K, V> implements Cache<K, V> {
         Node(K key, V value) {
             this.key = key;
             this.value = value;
-            this.frequency = 1;
+            this.frequency = 1; // Αρχική συχνότητα 1
         }
     }
 }
