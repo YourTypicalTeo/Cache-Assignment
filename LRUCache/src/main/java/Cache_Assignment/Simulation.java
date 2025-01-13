@@ -11,13 +11,13 @@ import java.util.Random;
 
 public class Simulation {
     public static void main(String[] args) {
-        int capacity = 25;  // Ορίζουμε το μέγεθος του cache
+        int capacity = 30;  // Ορίζουμε το μέγεθος του cache
         int totalOperations = 100000;  // Ορίζουμε τον συνολικό αριθμό των λειτουργιών που θα εκτελέσουμε
 
         // Επιλέγουμε την πολιτική αντικατάστασης
         //CacheReplacementPolicy policy = CacheReplacementPolicy.LRU;
         //CacheReplacementPolicy policy = CacheReplacementPolicy.LFU;
-        CacheReplacementPolicy policy = CacheReplacementPolicy.MRU;  // Μπορούμε να αλλάξουμε σε MRU αν θέλουμε
+        CacheReplacementPolicy policy = CacheReplacementPolicy.LFU;  // Μπορούμε να αλλάξουμε σε MRU αν θέλουμε
         // Δημιουργούμε ένα νέο LRUCache με το επιλεγμένο μέγεθος και πολιτική αντικατάστασης
         LRUCache<Integer, String> cache = new LRUCache<>(capacity, policy);
         Random random = new Random();  // Δημιουργούμε αντικείμενο Random για την παραγωγή τυχαίων αριθμών

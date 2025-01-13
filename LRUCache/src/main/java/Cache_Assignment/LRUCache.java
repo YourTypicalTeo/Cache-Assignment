@@ -5,7 +5,6 @@ package Cache_Assignment;
 it2023101_it2023140_it2023024
  *
  */
-import java.util.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -91,22 +90,24 @@ public class LRUCache<K, V> implements Cache<K, V> {
         map.put(key, newNode);  // Προσθέτουμε το νέο στοιχείο στον χάρτη
 
         // Προσθέτουμε το νέο στοιχείο στην αρχή ή στο τέλος ανάλογα με την πολιτική
-        if (policy == CacheReplacementPolicy.LRU || policy == CacheReplacementPolicy.MRU) {
-            list.addFirst(newNode);  // Προσθήκη στην αρχή ή στο τέλος για LRU/MRU
+        if (policy == CacheReplacementPolicy.LRU) {
+            list.addFirst(newNode);
+        } else if (policy == CacheReplacementPolicy.MRU) {
+            list.addLast(newNode);  // Use addLast for MRU
         } else if (policy == CacheReplacementPolicy.LFU) {
-            addToFrequencyList(newNode, 1);  // Προσθήκη του νέου στοιχείου με συχνότητα 1 για LFU
+            addToFrequencyList(newNode, 1);
         }
     }
 
     private void increaseFrequency(Node node) {
         // Αυξάνουμε τη συχνότητα και ενημερώνουμε τη θέση του στοιχείου
         DoublyLinkedList list = frequencyMap.get(node.frequency);
-        list.remove(node);  // Αφαιρούμε το στοιχείο από τη λίστα της τρέχουσας συχνότητας
-
-        if (list.size() == 0) {
-            frequencyMap.remove(node.frequency);  // Αφαιρούμε την καταχώρηση για τη συχνότητα αν η λίστα είναι άδεια
+        if (list != null) {
+            list.remove(node);
+            if (list.size() == 0) {
+                frequencyMap.remove(node.frequency);
+            }
         }
-
         node.frequency++;  // Αυξάνουμε τη συχνότητα του στοιχείου
         addToFrequencyList(node, node.frequency);  // Προσθέτουμε το στοιχείο στην νέα λίστα με την αυξημένη συχνότητα
     }
@@ -117,6 +118,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
     }
 
     private Node removeLFU() {
+        if (frequencyMap.isEmpty()) {
+            return null;  // Return null if there's nothing to remove
+        }
         // Αφαιρούμε το λιγότερο συχνά χρησιμοποιημένο στοιχείο από το cache
         Map.Entry<Integer, DoublyLinkedList> entry = frequencyMap.firstEntry();
         DoublyLinkedList list = entry.getValue();
