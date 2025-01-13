@@ -17,7 +17,7 @@ public class Simulation {
         // Επιλέγουμε την πολιτική αντικατάστασης
         //CacheReplacementPolicy policy = CacheReplacementPolicy.LRU;
         //CacheReplacementPolicy policy = CacheReplacementPolicy.MRU;
-        CacheReplacementPolicy policy = CacheReplacementPolicy.LRU;  // Μπορούμε να αλλάξουμε σε MRU αν θέλουμε
+        CacheReplacementPolicy policy = CacheReplacementPolicy.MRU;  // Μπορούμε να αλλάξουμε σε MRU αν θέλουμε
 
         // Δημιουργούμε ένα νέο LRUCache με το επιλεγμένο μέγεθος και πολιτική αντικατάστασης
         LRUCache<Integer, String> cache = new LRUCache<>(capacity, policy);
