@@ -2,90 +2,98 @@ package Cache_Assignment;
 /*
  *
  * @author ASSIGNMENT 2024-2025
-it2023101_it2023140_it2023024
+ * it2023101_it2023140_it2023024
  *
  */
+
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Queue;
 
 public class LFUCache<K, V> implements Cache<K, V> {
-    private final int capacity; // Το μέγεθος του cache
-    private final CacheReplacementPolicy policy; // Πολιτική αντικατάστασης (LFU)
-    private final Map<K, Node> map; // Χάρτης για δεδομένα του cache
-    private final TreeMap<Integer, HashSet<K>> frequencyMap; // Συχνότητα ταξινομημένη με TreeMap
+    private final int capacity; // Χωρητικότητα της προσωρινής μνήμης
+    private final Map<K, Node> cache; // Χάρτης για αποθήκευση στοιχείων
+    private final Map<Integer, Queue<K>> frequencyMap; // Χάρτης για συχνότητα
     private int minFrequency; // Ελάχιστη συχνότητα
+    private int hitCount = 0; // Μετρητής hits
+    private int missCount = 0; // Μετρητής misses
 
-    // Constructor
     public LFUCache(int capacity, CacheReplacementPolicy policy) {
         if (capacity <= 0) {
-            throw new IllegalArgumentException("Cache capacity must be greater than zero.");
+            throw new IllegalArgumentException("Η χωρητικότητα πρέπει να είναι μεγαλύτερη από το μηδέν.");
         }
         this.capacity = capacity;
-        this.policy = policy;
-        this.map = new HashMap<>();
-        this.frequencyMap = new TreeMap<>();
+        this.cache = new HashMap<>();
+        this.frequencyMap = new HashMap<>();
         this.minFrequency = 0;
     }
 
     @Override
     public V get(K key) {
-        if (!map.containsKey(key)) {
-            return null; // Miss
+        if (!cache.containsKey(key)) {
+            missCount++;
+            return null;
         }
-        Node node = map.get(key);
+        Node node = cache.get(key);
         increaseFrequency(node);
-        return node.value; // Hit
+        hitCount++;
+        return node.value;
     }
 
     @Override
     public void put(K key, V value) {
         if (capacity == 0) {
-            return; // Αν το cache έχει μέγεθος 0, δεν αποθηκεύουμε τίποτα
+            return;
         }
 
-        if (map.containsKey(key)) {
-            Node node = map.get(key);
-            node.value = value; // Ενημέρωση τιμής
+        if (cache.containsKey(key)) {
+            Node node = cache.get(key);
+            node.value = value;
             increaseFrequency(node);
-        } else {
-            if (map.size() == capacity) {
-                evictLFU(); // Διαγραφή του λιγότερο συχνού στοιχείου
-            }
-            Node newNode = new Node(key, value);
-            map.put(key, newNode);
-            frequencyMap.computeIfAbsent(1, k -> new HashSet<>()).add(key);
-            minFrequency = 1; // Η νέα ελάχιστη συχνότητα είναι 1
+            return;
         }
+
+        if (cache.size() == capacity) {
+            evictLFU();
+        }
+
+        Node newNode = new Node(key, value);
+        cache.put(key, newNode);
+        frequencyMap.computeIfAbsent(1, k -> new LinkedList<>()).add(key);
+        minFrequency = 1;
+        missCount++;
     }
 
     private void increaseFrequency(Node node) {
         int freq = node.frequency;
-        frequencyMap.get(freq).remove(node.key); // Αφαίρεση από την παλιά συχνότητα
-        if (frequencyMap.get(freq).isEmpty()) {
-            frequencyMap.remove(freq); // Αν είναι κενή, αφαιρείται η καταχώρηση
+        Queue<K> keys = frequencyMap.get(freq);
+        keys.remove(node.key);
+        if (keys.isEmpty()) {
+            frequencyMap.remove(freq);
             if (freq == minFrequency) {
-                minFrequency++; // Ενημέρωση της ελάχιστης συχνότητας
+                minFrequency++;
             }
         }
-
-        node.frequency++; // Αύξηση συχνότητας
-        frequencyMap.computeIfAbsent(node.frequency, k -> new HashSet<>()).add(node.key); // Προσθήκη στη νέα συχνότητα
+        node.frequency++;
+        frequencyMap.computeIfAbsent(node.frequency, k -> new LinkedList<>()).add(node.key);
     }
 
     private void evictLFU() {
-        if (policy != CacheReplacementPolicy.LFU) {
-            throw new UnsupportedOperationException("This cache only supports LFU policy.");
-        }
-
-        // Βρίσκουμε το στοιχείο με τη χαμηλότερη συχνότητα
-        K keyToRemove = frequencyMap.get(minFrequency).iterator().next();
-        frequencyMap.get(minFrequency).remove(keyToRemove);
-        if (frequencyMap.get(minFrequency).isEmpty()) {
+        Queue<K> keys = frequencyMap.get(minFrequency);
+        K keyToRemove = keys.poll(); // Παίρνουμε το πρώτο στοιχείο στη συχνότητα
+        if (keys.isEmpty()) {
             frequencyMap.remove(minFrequency);
         }
-        map.remove(keyToRemove); // Αφαίρεση από τον κύριο χάρτη
+        cache.remove(keyToRemove);
+    }
+
+    public int getHitCount() {
+        return hitCount;
+    }
+
+    public int getMissCount() {
+        return missCount;
     }
 
     private class Node {
@@ -96,7 +104,7 @@ public class LFUCache<K, V> implements Cache<K, V> {
         Node(K key, V value) {
             this.key = key;
             this.value = value;
-            this.frequency = 1; // Ξεκινάμε με συχνότητα 1
+            this.frequency = 1;
         }
     }
 }
