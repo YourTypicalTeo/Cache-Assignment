@@ -1,4 +1,4 @@
- LRUCache & MRUCache & LFUCache
+# LRUCache & MRUCache & LFUCache
 
 Αυτό το Project υλοποιεί μια κρυφή μνήμη (cache) τύπου LRU (Least Recently Used) μέσα στην οποία υπάρχει και η MRUCache(Most Recently Used) και η LFU(Least Frequency Used).
 ## Τεχνολογίες
